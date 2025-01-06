@@ -19,31 +19,34 @@ class LibShareApp extends StatelessWidget {
       create: (context) => BookProvider(),
       child: MaterialApp(
         title: 'LibShare',
+        // Light Theme Configuration
         theme: FlexThemeData.light(
-          scheme: FlexScheme.indigo,
+          scheme: FlexScheme.deepBlue, // Use Material 3 indigo scheme
           surfaceMode: FlexSurfaceMode.levelSurfacesLowScaffold,
-          blendLevel: 7,
+          blendLevel: 7, // Adjust blend level for light theme
           subThemesData: const FlexSubThemesData(
             blendOnLevel: 10,
             blendOnColors: false,
             useTextTheme: true,
             useM2StyleDividerInM3: true,
-            alignedDropdown: true,
+            alignedDropdown: true, // Align dropdown items properly
             useInputDecoratorThemeInDialogs: true,
             inputDecoratorBorderType: FlexInputBorderType.outline,
             inputDecoratorUnfocusedBorderIsColored: false,
-            fabUseShape: true,
-            fabAlwaysCircular: false,
+            fabUseShape: true, // Use custom shape for FAB
+            fabAlwaysCircular: false, // Allow non-circular FAB shapes
           ),
           visualDensity: FlexColorScheme.comfortablePlatformDensity,
-          useMaterial3: true,
-          swapLegacyOnMaterial3: true,
-          textTheme: GoogleFonts.openSansTextTheme(),
+          useMaterial3: true, // Enable Material 3
+          swapLegacyOnMaterial3: true, // Swap legacy Material 2 defaults
+          textTheme: GoogleFonts.ralewayTextTheme(), // Use Poppins font
+          fontFamily: GoogleFonts.raleway().fontFamily,
         ),
+        // Dark Theme Configuration
         darkTheme: FlexThemeData.dark(
-          scheme: FlexScheme.indigo,
+          scheme: FlexScheme.indigo, // Use Material 3 indigo scheme
           surfaceMode: FlexSurfaceMode.levelSurfacesLowScaffold,
-          blendLevel: 13,
+          blendLevel: 13, // Adjust blend level for dark theme
           subThemesData: const FlexSubThemesData(
             blendOnLevel: 20,
             useTextTheme: true,
@@ -58,11 +61,12 @@ class LibShareApp extends StatelessWidget {
           visualDensity: FlexColorScheme.comfortablePlatformDensity,
           useMaterial3: true,
           swapLegacyOnMaterial3: true,
-          textTheme: GoogleFonts.openSansTextTheme(),
+          textTheme: GoogleFonts.poppinsTextTheme(), // Use Poppins font
+          fontFamily: GoogleFonts.poppins().fontFamily,
         ),
-        themeMode: ThemeMode.system,
+        themeMode: ThemeMode.system, // Follow system theme mode
         home: const BookListScreen(),
-        debugShowCheckedModeBanner: false,
+        debugShowCheckedModeBanner: false, // Remove debug banner
       ),
     );
   }
