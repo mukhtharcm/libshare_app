@@ -27,7 +27,8 @@ class LibShareApp extends StatelessWidget {
           subThemesData: const FlexSubThemesData(
             blendOnLevel: 10,
             blendOnColors: false,
-            useTextTheme: true,
+            // useTextTheme: true,
+            useMaterial3Typography: true,
             useM2StyleDividerInM3: true,
             alignedDropdown: true, // Align dropdown items properly
             useInputDecoratorThemeInDialogs: true,
@@ -49,7 +50,8 @@ class LibShareApp extends StatelessWidget {
           blendLevel: 13, // Adjust blend level for dark theme
           subThemesData: const FlexSubThemesData(
             blendOnLevel: 20,
-            useTextTheme: true,
+            // useTextTheme: true,
+            useMaterial3Typography: true,
             useM2StyleDividerInM3: true,
             alignedDropdown: true,
             useInputDecoratorThemeInDialogs: true,
