@@ -40,5 +40,3 @@ class SearchBooks extends BookListEvent {
   @override
   List<Object> get props => [query];
 }
-
-class LoadCategories extends BookListEvent {}

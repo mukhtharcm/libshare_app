@@ -331,37 +331,40 @@ class _AddEditBookScreenState extends State<AddEditBookScreen> {
                       }
                     },
                     builder: (context, categoryState) {
-                      return DropdownButtonFormField<int>(
-                        value: _selectedCategoryId,
-                        decoration: InputDecoration(
-                          labelText: 'Category',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                      return BlocBuilder<category_bloc.CategoryBloc,
+                              category_bloc.CategoryState>(
+                          builder: (context, categoryState) {
+                        return DropdownButtonFormField<int>(
+                          value: _selectedCategoryId,
+                          decoration: InputDecoration(
+                            labelText: 'Category',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
-                        ),
-                        items: state is BookListLoaded
-                            ? [
-                                ...state.categories?.map(
-                                      (category) => DropdownMenuItem(
-                                        value: category.id,
-                                        child: Text(category.name),
-                                      ),
-                                    ) ??
-                                    []
-                              ]
-                            : [],
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedCategoryId = value;
-                          });
-                        },
-                        validator: (value) {
-                          if (value == null) {
-                            return 'Please select a category';
-                          }
-                          return null;
-                        },
-                      );
+                          items: categoryState is category_bloc.CategoryLoaded
+                              ? [
+                                  ...categoryState.categories.map(
+                                    (category) => DropdownMenuItem(
+                                      value: category.id,
+                                      child: Text(category.name),
+                                    ),
+                                  )
+                                ]
+                              : [],
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedCategoryId = value;
+                            });
+                          },
+                          validator: (value) {
+                            if (value == null) {
+                              return 'Please select a category';
+                            }
+                            return null;
+                          },
+                        );
+                      });
                     },
                   ),
                   const SizedBox(height: 16),

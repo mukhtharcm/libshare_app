@@ -13,11 +13,10 @@ class BookListLoading extends BookListState {}
 
 class BookListLoaded extends BookListState {
   final List<BookWithCategory> books;
-  final List<Category>? categories;
-  const BookListLoaded({required this.books, this.categories});
+  const BookListLoaded({required this.books});
 
   @override
-  List<Object> get props => [books, categories ?? []];
+  List<Object> get props => [books];
 }
 
 class BookListError extends BookListState {

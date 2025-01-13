@@ -15,7 +15,6 @@ class BookListBloc extends Bloc<BookListEvent, BookListState> {
     on<UpdateBook>(_onUpdateBook);
     on<DeleteBook>(_onDeleteBook);
     on<SearchBooks>(_onSearchBooks);
-    on<LoadCategories>(_onLoadCategories);
   }
 
   void _onLoadBooks(LoadBooks event, Emitter<BookListState> emit) async {
@@ -85,17 +84,6 @@ class BookListBloc extends Bloc<BookListEvent, BookListState> {
     try {
       final books = await database.searchBooks(event.query);
       emit(BookListLoaded(books: books));
-    } catch (e) {
-      emit(BookListError(message: e.toString()));
-    }
-  }
-
-  void _onLoadCategories(
-      LoadCategories event, Emitter<BookListState> emit) async {
-    emit(BookListLoading());
-    try {
-      final categories = await database.getAllCategories();
-      emit(BookListLoaded(books: const [], categories: categories));
     } catch (e) {
       emit(BookListError(message: e.toString()));
     }
