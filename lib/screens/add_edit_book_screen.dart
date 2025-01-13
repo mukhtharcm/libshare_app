@@ -324,10 +324,10 @@ class _AddEditBookScreenState extends State<AddEditBookScreen> {
                       if (state is category_bloc.CategoryError) {
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                           content: Text(state.message),
-                          // duration: const Duration(
-                          //   milliseconds: 100,
-                          // ),
                         ));
+                        context
+                            .read<category_bloc.CategoryBloc>()
+                            .add(category_bloc.LoadCategories());
                       }
                     },
                     builder: (context, categoryState) {
