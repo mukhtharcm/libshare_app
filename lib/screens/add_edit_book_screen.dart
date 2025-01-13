@@ -1,9 +1,11 @@
 import 'dart:io';
+import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import '../blocs/book_list_bloc.dart';
+import '../blocs/category_bloc.dart' as category_bloc;
 import '../database/database.dart';
-import '../providers/book_provider.dart';
 
 class AddEditBookScreen extends StatefulWidget {
   final BookWithCategory? book;
@@ -46,7 +48,7 @@ class _AddEditBookScreenState extends State<AddEditBookScreen> {
     }
   }
 
-  void _showCategoryDialog(BuildContext context, BookProvider bookProvider) {
+  void _showCategoryDialog(BuildContext context) {
     final suggestedCategories = [
       {'name': 'Fiction', 'icon': Icons.book},
       {'name': 'Non-Fiction', 'icon': Icons.menu_book},
@@ -128,9 +130,15 @@ class _AddEditBookScreenState extends State<AddEditBookScreen> {
                 itemBuilder: (context, index) {
                   final category = suggestedCategories[index];
                   return GestureDetector(
-                    onTap: () async {
-                      await bookProvider
-                          .addCategory(category['name'] as String);
+                    onTap: () {
+                      context.read<category_bloc.CategoryBloc>().add(
+                            category_bloc.AddCategory(
+                              category: CategoriesCompanion(
+                                // id: 0,
+                                name: Value(category['name'] as String),
+                              ),
+                            ),
+                          );
                       if (mounted) Navigator.pop(context);
                     },
                     child: Container(
@@ -166,11 +174,18 @@ class _AddEditBookScreenState extends State<AddEditBookScreen> {
                 children: [
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: () async {
+                      onPressed: () {
                         if (formKey.currentState!.validate()) {
-                          await bookProvider.addCategory(
-                            customCategoryController.text.trim(),
-                          );
+                          context.read<category_bloc.CategoryBloc>().add(
+                                category_bloc.AddCategory(
+                                  category: CategoriesCompanion(
+                                    // id: 0,
+                                    name: Value(
+                                      customCategoryController.text.trim(),
+                                    ),
+                                  ),
+                                ),
+                              );
                           if (mounted) Navigator.pop(context);
                         }
                       },
@@ -241,14 +256,19 @@ class _AddEditBookScreenState extends State<AddEditBookScreen> {
             ),
           ];
         },
-        body: Consumer<BookProvider>(
-          builder: (context, bookProvider, child) {
-            if (bookProvider.categories.isEmpty) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                _showCategoryDialog(context, bookProvider);
-              });
+        body: BlocConsumer<BookListBloc, BookListState>(
+          listener: (context, state) {
+            if (state is BookListError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  // backgroundColor: Theme.of(context).
+                  backgroundColor: Colors.red,
+                ),
+              );
             }
-
+          },
+          builder: (context, state) {
             return Form(
               key: _formKey,
               child: ListView(
@@ -298,37 +318,55 @@ class _AddEditBookScreenState extends State<AddEditBookScreen> {
                     },
                   ),
                   const SizedBox(height: 16),
-                  DropdownButtonFormField<int>(
-                    value: _selectedCategoryId,
-                    decoration: InputDecoration(
-                      labelText: 'Category',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    items: [
-                      ...bookProvider.categories.map(
-                        (category) => DropdownMenuItem(
-                          value: category.id,
-                          child: Text(category.name),
-                        ),
-                      ),
-                    ],
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedCategoryId = value;
-                      });
-                    },
-                    validator: (value) {
-                      if (value == null) {
-                        return 'Please select a category';
+                  BlocConsumer<category_bloc.CategoryBloc,
+                      category_bloc.CategoryState>(
+                    listener: (context, state) {
+                      if (state is category_bloc.CategoryError) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text(state.message),
+                          // duration: const Duration(
+                          //   milliseconds: 100,
+                          // ),
+                        ));
                       }
-                      return null;
+                    },
+                    builder: (context, categoryState) {
+                      return DropdownButtonFormField<int>(
+                        value: _selectedCategoryId,
+                        decoration: InputDecoration(
+                          labelText: 'Category',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        items: state is BookListLoaded
+                            ? [
+                                ...state.categories?.map(
+                                      (category) => DropdownMenuItem(
+                                        value: category.id,
+                                        child: Text(category.name),
+                                      ),
+                                    ) ??
+                                    []
+                              ]
+                            : [],
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedCategoryId = value;
+                          });
+                        },
+                        validator: (value) {
+                          if (value == null) {
+                            return 'Please select a category';
+                          }
+                          return null;
+                        },
+                      );
                     },
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
-                    onPressed: () => _showCategoryDialog(context, bookProvider),
+                    onPressed: () => _showCategoryDialog(context),
                     icon: const Icon(Icons.add),
                     label: const Text('Add New Category'),
                     style: ElevatedButton.styleFrom(
@@ -340,23 +378,32 @@ class _AddEditBookScreenState extends State<AddEditBookScreen> {
                   ),
                   const SizedBox(height: 32),
                   ElevatedButton(
-                    onPressed: () async {
+                    onPressed: () {
                       if (_formKey.currentState!.validate()) {
-                        final bookProvider = context.read<BookProvider>();
-
                         if (widget.book == null) {
-                          await bookProvider.addBook(
-                            title: _titleController.text,
-                            categoryId: _selectedCategoryId!,
-                            coverImagePath: _coverImagePath,
-                          );
+                          context.read<BookListBloc>().add(
+                                AddBook(
+                                  book: BookWithCategory(
+                                    id: 0,
+                                    title: _titleController.text,
+                                    categoryId: _selectedCategoryId!,
+                                    categoryName: '',
+                                    coverImagePath: _coverImagePath,
+                                  ),
+                                ),
+                              );
                         } else {
-                          await bookProvider.updateBook(
-                            id: widget.book!.id,
-                            title: _titleController.text,
-                            categoryId: _selectedCategoryId!,
-                            coverImagePath: _coverImagePath,
-                          );
+                          context.read<BookListBloc>().add(
+                                UpdateBook(
+                                  book: BookWithCategory(
+                                    id: widget.book!.id,
+                                    title: _titleController.text,
+                                    categoryId: _selectedCategoryId!,
+                                    categoryName: '',
+                                    coverImagePath: _coverImagePath,
+                                  ),
+                                ),
+                              );
                         }
 
                         if (mounted) {

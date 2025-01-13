@@ -1,7 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/book_provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../blocs/book_list_bloc.dart';
+import '../blocs/category_bloc.dart';
 import 'add_edit_book_screen.dart';
 
 class BookListScreen extends StatefulWidget {
@@ -32,8 +33,7 @@ class _BookListScreenState extends State<BookListScreen> {
         });
       } else {
         _searchController.clear();
-        context.read<BookProvider>().updateSearchQuery('');
-        context.read<BookProvider>().loadBooks();
+        context.read<BookListBloc>().add(LoadBooks());
       }
     });
   }
@@ -92,17 +92,16 @@ class _BookListScreenState extends State<BookListScreen> {
                                 color: Theme.of(context).colorScheme.onPrimary,
                               ),
                             ),
-                            if (!_isSearching)
-                              Text(
-                                'Your Personal Library',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onPrimary
-                                      .withOpacity(0.8),
-                                ),
+                            Text(
+                              'Your Personal Library',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onPrimary
+                                    .withOpacity(0.8),
                               ),
+                            ),
                           ],
                         ),
                       ),
@@ -161,8 +160,7 @@ class _BookListScreenState extends State<BookListScreen> {
                           ),
                           onPressed: () {
                             _searchController.clear();
-                            context.read<BookProvider>().updateSearchQuery('');
-                            context.read<BookProvider>().loadBooks();
+                            context.read<BookListBloc>().add(LoadBooks());
                           },
                         ),
                       ),
@@ -170,12 +168,12 @@ class _BookListScreenState extends State<BookListScreen> {
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
                       onChanged: (query) {
-                        final bookProvider = context.read<BookProvider>();
-                        bookProvider.updateSearchQuery(query);
                         if (query.isNotEmpty) {
-                          bookProvider.searchBooks(query);
+                          context
+                              .read<BookListBloc>()
+                              .add(SearchBooks(query: query));
                         } else {
-                          bookProvider.loadBooks();
+                          context.read<BookListBloc>().add(LoadBooks());
                         }
                       },
                     ),
@@ -185,148 +183,164 @@ class _BookListScreenState extends State<BookListScreen> {
           },
           body: TabBarView(
             children: [
-              Consumer<BookProvider>(
-                builder: (context, bookProvider, child) {
-                  final books = bookProvider.books;
-                  if (books.isEmpty) {
-                    return Center(
-                      child: Text(
-                        bookProvider.searchQuery.isNotEmpty
-                            ? 'No books found'
-                            : 'No books added yet',
-                        style: Theme.of(context).textTheme.bodyLarge,
-                      ),
-                    );
+              BlocBuilder<BookListBloc, BookListState>(
+                builder: (context, state) {
+                  if (state is BookListLoading) {
+                    return const Center(child: CircularProgressIndicator());
                   }
-                  return ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: books.length,
-                    itemBuilder: (context, index) {
-                      final book = books[index];
-                      return Card(
-                        elevation: 3,
-                        margin: const EdgeInsets.only(bottom: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
+                  if (state is BookListError) {
+                    return Center(child: Text(state.message));
+                  }
+                  if (state is BookListLoaded) {
+                    final books = state.books;
+                    if (books.isEmpty) {
+                      return const Center(
+                        child: Text(
+                          'No books added yet',
                         ),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.all(12),
-                          leading: book.coverImagePath != null
-                              ? ClipRRect(
-                                  borderRadius: BorderRadius.circular(10),
-                                  child: Image.file(
-                                    File(book.coverImagePath!),
+                      );
+                    }
+                    return ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: books.length,
+                      itemBuilder: (context, index) {
+                        final book = books[index];
+                        return Card(
+                          elevation: 3,
+                          margin: const EdgeInsets.only(bottom: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.all(12),
+                            leading: book.coverImagePath != null
+                                ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(10),
+                                    child: Image.file(
+                                      File(book.coverImagePath!),
+                                      width: 50,
+                                      height: 50,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  )
+                                : Container(
                                     width: 50,
                                     height: 50,
-                                    fit: BoxFit.cover,
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .secondary
+                                          .withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Icon(
+                                      Icons.book,
+                                      size: 30,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withOpacity(0.6),
+                                    ),
                                   ),
-                                )
-                              : Container(
-                                  width: 50,
-                                  height: 50,
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .secondary
-                                        .withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Icon(
-                                    Icons.book,
-                                    size: 30,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withOpacity(0.6),
-                                  ),
-                                ),
-                          title: Text(
-                            book.title,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                          ),
-                          subtitle: Text(
-                            book.categoryName,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withOpacity(0.6),
-                            ),
-                          ),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    AddEditBookScreen(book: book),
+                            title: Text(
+                              book.title,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
-                            );
-                          },
-                        ),
-                      );
-                    },
-                  );
+                            ),
+                            subtitle: Text(
+                              book.categoryName,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withOpacity(0.6),
+                              ),
+                            ),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      AddEditBookScreen(book: book),
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    );
+                  }
+                  return Container();
                 },
               ),
-              Consumer<BookProvider>(
-                builder: (context, bookProvider, child) {
-                  return ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: bookProvider.categories.length,
-                    itemBuilder: (context, index) {
-                      final category = bookProvider.categories[index];
-                      final booksInCategory = bookProvider.books
-                          .where((book) => book.categoryId == category.id)
-                          .length;
+              BlocBuilder<CategoryBloc, CategoryState>(
+                builder: (context, state) {
+                  if (state is CategoryLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (state is CategoryError) {
+                    return Center(child: Text(state.message));
+                  }
+                  if (state is CategoryLoaded) {
+                    final categories = state.categories;
+                    return ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: categories.length,
+                      itemBuilder: (context, index) {
+                        final category = categories[index];
+                        // final booksInCategory = bookProvider.books
+                        //     .where((book) => book.categoryId == category.id)
+                        //     .length;
 
-                      return Card(
-                        elevation: 3,
-                        margin: const EdgeInsets.only(bottom: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.all(12),
-                          title: Text(
-                            category.name,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
+                        return Card(
+                          elevation: 3,
+                          margin: const EdgeInsets.only(bottom: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
                           ),
-                          trailing: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .primary
-                                  .withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              '$booksInCategory books',
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.all(12),
+                            title: Text(
+                              category.name,
                               style: TextStyle(
-                                color: Theme.of(context).colorScheme.primary,
+                                fontSize: 16,
                                 fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
+                            trailing: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                '0 books',
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            onTap: () {
+                              // Future implementation
+                            },
                           ),
-                          onTap: () {
-                            // Future implementation
-                          },
-                        ),
-                      );
-                    },
-                  );
+                        );
+                      },
+                    );
+                  }
+                  return Container();
                 },
               ),
             ],

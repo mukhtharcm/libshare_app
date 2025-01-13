@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:get_it/get_it.dart';
 
-import 'providers/book_provider.dart';
+import 'blocs/book_list_bloc.dart' as book_list_bloc;
+import 'blocs/category_bloc.dart' as category_bloc;
+import 'database/database.dart';
 import 'screens/book_list_screen.dart';
 
+final getIt = GetIt.instance;
+
 void main() {
+  getIt.registerSingleton<AppDatabase>(AppDatabase());
   runApp(const LibShareApp());
 }
 
@@ -15,8 +21,19 @@ class LibShareApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => BookProvider(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) =>
+              book_list_bloc.BookListBloc(database: getIt<AppDatabase>())
+                ..add(book_list_bloc.LoadBooks()),
+        ),
+        BlocProvider(
+          create: (context) =>
+              category_bloc.CategoryBloc(database: getIt<AppDatabase>())
+                ..add(category_bloc.LoadCategories()),
+        ),
+      ],
       child: MaterialApp(
         title: 'LibShare',
         // Light Theme Configuration
