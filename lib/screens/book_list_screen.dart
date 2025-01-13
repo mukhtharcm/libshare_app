@@ -312,26 +312,27 @@ class _BookListScreenState extends State<BookListScreen> {
                                 color: Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
-                            trailing: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .primary
-                                    .withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                '0 books',
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
+                            // trailing: Container(
+                            //   padding: const EdgeInsets.symmetric(
+                            //     horizontal: 12,
+                            //     vertical: 6,
+                            //   ),
+                            //   decoration: BoxDecoration(
+                            //     color: Theme.of(context)
+                            //         .colorScheme
+                            //         .primary
+                            //         .withOpacity(0.2),
+                            //     borderRadius: BorderRadius.circular(20),
+                            //   ),
+                            //   child: Text(
+                            //     '${category.id} books',
+                            //     style: TextStyle(
+                            //       color: Theme.of(context).colorScheme.primary,
+                            //       fontWeight: FontWeight.bold,
+                            //     ),
+                            //   ),
+                            // ),
+
                             onTap: () {
                               // Future implementation
                             },
